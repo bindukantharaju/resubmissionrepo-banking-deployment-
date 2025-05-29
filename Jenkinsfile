@@ -29,7 +29,11 @@ pipeline {
 
         stage('Login to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
                 }
             }
@@ -41,13 +45,13 @@ pipeline {
             }
         }
 
-        stage('Stop & Remove Existing Container') {
+        stage('Stop Existing Container (if any)') {
             steps {
                 script {
                     sh """
-                    if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
-                        docker stop ${CONTAINER_NAME}
-                        docker rm ${CONTAINER_NAME}
+                    if docker ps -a --format '{{.Names}}' | grep -Eq '^${CONTAINER_NAME}\$'; then
+                        docker stop ${CONTAINER_NAME} || true
+                        docker rm ${CONTAINER_NAME} || true
                     fi
                     """
                 }
@@ -63,12 +67,14 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline finished.'
+            echo '✅ Pipeline finished.'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo '❌ Pipeline failed!'
         }
     }
 }
+
+
 
 
