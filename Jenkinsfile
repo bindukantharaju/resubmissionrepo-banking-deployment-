@@ -2,7 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "bindubanking"
+        DOCKER_HUB_REPO = "bindukantharaju/bindubanking"
+        IMAGE_TAG = "v1"
+        IMAGE_NAME = "${DOCKER_HUB_REPO}:${IMAGE_TAG}"
         CONTAINER_NAME = "bindubanking123"
         HOST_PORT = "8083"
         CONTAINER_PORT = "8081"
@@ -20,8 +22,22 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${IMAGE_NAME}:latest")
+                    docker.build("${IMAGE_NAME}")
                 }
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh "docker push ${IMAGE_NAME}"
             }
         }
 
@@ -40,11 +56,7 @@ pipeline {
 
         stage('Run Docker Container') {
             steps {
-                script {
-                    sh """
-                    docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}:latest
-                    """
-                }
+                sh "docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}"
             }
         }
     }
