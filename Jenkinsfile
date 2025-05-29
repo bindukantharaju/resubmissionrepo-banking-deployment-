@@ -7,7 +7,7 @@ pipeline {
         HOST_PORT = "8083"
         CONTAINER_PORT = "8081"
         REPO_URL = "https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git"
-        BRANCH = "main" // change if needed
+        BRANCH = "master"
     }
 
     stages {
@@ -28,7 +28,6 @@ pipeline {
         stage('Stop & Remove Existing Container') {
             steps {
                 script {
-                    // Stop and remove container if exists (ignore errors)
                     sh """
                     if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
                         docker stop ${CONTAINER_NAME}
@@ -59,4 +58,5 @@ pipeline {
         }
     }
 }
+
 
