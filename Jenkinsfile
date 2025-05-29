@@ -1,31 +1,62 @@
 pipeline {
     agent any
+
+    environment {
+        IMAGE_NAME = "bindubanking"
+        CONTAINER_NAME = "bindubanking123"
+        HOST_PORT = "8083"
+        CONTAINER_PORT = "8081"
+        REPO_URL = "https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git"
+        BRANCH = "main" // change if needed
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git', branch: 'master'
+                git branch: "${BRANCH}", url: "${REPO_URL}"
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t bindukantharaju/banking:v1 .'
-                    sh 'docker images'
+                    docker.build("${IMAGE_NAME}:latest")
                 }
             }
         }
-        stage('Docker Login') {
+
+        stage('Stop & Remove Existing Container') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-pwd', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                    sh "echo $PASS | docker login -u $USER --password-stdin"
-                    sh 'docker push bindukantharaju/banking:v1'
+                script {
+                    // Stop and remove container if exists (ignore errors)
+                    sh """
+                    if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                        docker stop ${CONTAINER_NAME}
+                        docker rm ${CONTAINER_NAME}
+                    fi
+                    """
                 }
             }
         }
-        stage('Deploy') {
+
+        stage('Run Docker Container') {
             steps {
-                sh 'sudo docker run -itd --name banking-container -p 8083:8081 bindukantharaju/banking:v1'
+                script {
+                    sh """
+                    docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}:latest
+                    """
+                }
             }
         }
     }
+
+    post {
+        always {
+            echo 'Pipeline finished.'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
+
