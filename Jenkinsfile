@@ -3,7 +3,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/bindukantharaju/resubmissionrepo-banking-deployment-.git', branch: 'master'
+                git url: 'https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git', branch: 'master'
             }
         }
         stage('Build Docker Image') {
