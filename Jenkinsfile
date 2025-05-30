@@ -1,76 +1,40 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKER_HUB_REPO = "bindukantharaju/bindubanking"
-        IMAGE_TAG = "v1"
-        IMAGE_NAME = "${DOCKER_HUB_REPO}:${IMAGE_TAG}"
-        CONTAINER_NAME = "bindubanking123"
-        HOST_PORT = "8083"
-        CONTAINER_PORT = "8081"
-        REPO_URL = "https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git"
-        BRANCH = "master"
-    }
-
     stages {
-        stage('Clone Repository') {
+        stage('Git Clone') {
             steps {
-                git branch: "${BRANCH}", url: "${REPO_URL}"
+                git url: 'https://github.com/bindukantharaju/star-agile-insurance-project.git', branch: 'master'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${IMAGE_NAME}")
+                sh 'sudo docker build -t bindukantharaju/staragileprojectfinance:v1 .'
+                sh 'sudo docker images'
+            }
+        }
+
+        stage('Docker Login and Push') {
+            steps {
+                withCredentials([string(credentialsId: 'dockerhubpass', variable: 'DOCKERHUB_PASS')]) {
+                    sh '''
+                        set +x
+                        echo "$DOCKERHUB_PASS" | sudo docker login -u bindukantharaju --password-stdin
+                        set -x
+                        sudo docker push bindukantharaju/staragileprojectfinance:v1
+                    '''
                 }
             }
         }
 
-        stage('Login to Docker Hub') {
+        stage('Deploy Container') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                }
+                sh '''
+                    sudo docker rm -f my-container || true
+                    sudo docker run -itd --name my-container -p 8081:8081 bindukantharaju/staragileprojectfinance:v1
+                '''
             }
-        }
-
-        stage('Push Docker Image') {
-            steps {
-                sh "docker push ${IMAGE_NAME}"
-            }
-        }
-
-        stage('Stop Existing Container (if any)') {
-            steps {
-                script {
-                    sh """
-                    if docker ps -a --format '{{.Names}}' | grep -Eq '^${CONTAINER_NAME}\$'; then
-                        docker stop ${CONTAINER_NAME} || true
-                        docker rm ${CONTAINER_NAME} || true
-                    fi
-                    """
-                }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                sh "docker run -d --name ${CONTAINER_NAME} -p ${HOST_PORT}:${CONTAINER_PORT} ${IMAGE_NAME}"
-            }
-        }
-    }
-
-    post {
-        always {
-            echo '✅ Pipeline finished.'
-        }
-        failure {
-            echo '❌ Pipeline failed!'
         }
     }
 }
