@@ -4,13 +4,13 @@ pipeline {
     stages {
         stage('Git Clone') {
             steps {
-                git url: 'https://github.com/bindukantharaju/star-agile-insurance-project.git', branch: 'master'
+                git url: 'https://github.com/bindukantharaju/resubmissionrepo-banking-deployment12.git', branch: 'master'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'sudo docker build -t bindukantharaju/staragileprojectfinance:v1 .'
+                sh 'sudo docker build -t bindukantharaju/staragileprojectbanking:v1 .'
                 sh 'sudo docker images'
             }
         }
@@ -22,7 +22,7 @@ pipeline {
                         set +x
                         echo "$DOCKERHUB_PASS" | sudo docker login -u bindukantharaju --password-stdin
                         set -x
-                        sudo docker push bindukantharaju/staragileprojectfinance:v1
+                        sudo docker push bindukantharaju/staragileprojectbanking:v1
                     '''
                 }
             }
@@ -32,7 +32,7 @@ pipeline {
             steps {
                 sh '''
                     sudo docker rm -f my-container || true
-                    sudo docker run -itd --name my-container -p 8081:8081 bindukantharaju/staragileprojectfinance:v1
+                    sudo docker run -itd --name my-container -p 8084:8081 bindukantharaju/staragileprojectbanking:v1
                 '''
             }
         }
